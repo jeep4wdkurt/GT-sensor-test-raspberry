@@ -1,0 +1,63 @@
+Linux System Info Commands
+
+ps			# Process status
+top			# Top CPU proceses
+htop			# Top CPU proceses, enhanced
+iotop			# Top IO processes
+df			# Disk free space
+free -h			# Memory allocation summary
+
+cat /proc/cpuinfo	# Processor info
+cat /proc/meminfo	# Memory allocation info
+cat /proc/partitions	# Memory partition info
+cat /proc/version	# LInux versionk info
+
+cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq	# CPU current frequency khz
+cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_min_freq	# CPU minimum frequency khz
+cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq	# CPU maximum frequency khz
+
+================================
+RaspberryPi System Info Commands
+================================
+
+vcgencmd measure_temp						# Measure temperature
+
+vcgencmd measure_clock arm					# Measure arm clock rate (Hz)
+vcgencmd measure_clock core					# Measure core CPU clock rate (Hz)
+vcgencmd measure_clock h264					# Measure h264 codec clock rate (Hz)
+vcgencmd measure_clock isp
+vcgencmd measure_clock v3d
+vcgencmd measure_clock uart
+vcgencmd measure_clock pwm
+vcgencmd measure_clock emmc
+vcgencmd measure_clock pixel
+vcgencmd measure_clock vec
+vcgencmd measure_clock hdmi
+vcgencmd measure_clock dpi
+
+for src in arm core h264 isp v3d uart pwm emmc pixel vec hdmi dpi ; do  \
+  echo -e "$src:\t$(vcgencmd measure_clock $src)" ;                     \
+done
+
+vcgencmd measure_volts core
+vcgencmd measure_volts sdram_c
+vcgencmd measure_volts sdram_i
+vcgencmd measure_volts sdram_p
+
+for id in core sdram_c sdram_i sdram_p ; do         \
+  echo -e "$id:\t$(vcgencmd measure_volts $id)" ;   \
+done
+
+vcgencmd codec_enabled H264					# Report enabled status of H264 codec
+vcgencmd codec_enabled MPG2					# Report enabled status of MPG2 codec
+vcgencmd codec_enabled MPG4					# Report enabled status of MPG4 codec
+vcgencmd codec_enabled MJPG					# Report enabled status of MJPG codec
+vcgencmd codec_enabled WVC1					# Report enabled status of WVC1 codec
+vcgencmd codec_enabled WMV9					# Report enabled status of WMV9 codec
+
+for codec in H264 MPG2 WVC1 MPG4 MJPG WMV9 ; do          \
+  echo -e "$codec:\t$(vcgencmd codec_enabled $codec)" ;  \
+done
+
+vcgencmd get_mem arm						# Report amount of memory allocated to ARM
+vcgencmd get_mem gpu						# Reprot amount of memory allocated to GPU 
