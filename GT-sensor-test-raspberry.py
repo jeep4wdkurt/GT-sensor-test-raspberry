@@ -63,22 +63,22 @@ def ow_sensor_read_temp_raw(ow_device):
     return lines
  
 def ow_sensor_read_temp(ow_device):
+    device_id_pos = ow_device.find('28-')
+    device_id = ow_device[device_id_pos:]
     lines = ow_sensor_read_temp_raw(ow_device)
     while lines[0].strip()[-3:] != 'YES':
         time.sleep(0.2)
         lines = ow_read_temp_raw(ow_device)
-    equals_pos = lines[1].find('t=')
+    tag_pos = lines[1].find('t=')
     tempf = -999.0
-    if equals_pos != -1:
-        temp_string = lines[1][equals_pos+2:]
+    if tag_pos != -1:
+        temp_string = lines[1][tag_pos+2:]
         temp_c = float(temp_string) / 1000.0
         temp_f = temp_c * 9.0 / 5.0 + 32.0
-    return temp_f
+    return device_id,temp_f
 
 def ow_sensor_read_temp_text(ow_device):
-    temp_f = ow_sensor_read_temp(ow_device)
-    device_id_pos = ow_device.find('28-')
-    device_id = ow_device[device_id_pos:]
+    device_id, femp_f = ow_sensor_read_temp(ow_device)
     out_text = "Soil Temp @{0} : {1:0.1f} F".format(device_id,temp_f)
     return out_text
 
@@ -86,13 +86,16 @@ def ow_sensors_read_all():
     global ow_sensor_temps
     ow_sensor_temps = []
     for ow_device in ow_device_folders:
-        temp_text = ow_sensor_read_temp_text(ow_device)
-        ow_sensor_temps.append(temp_text)
+        device_id, temp_f = ow_sensor_read_temp(ow_device)
+        sensor_data = [[device_id,temp_f]]
+        ow_sensor_temps.append([device_id,temp_f])
 
 def ow_sensors_report_all():
     global ow_sensor_temps
-    for temp_text in ow_sensor_temps:
-        print(temp_text)
+    for temp_data in ow_sensor_temps:
+    #    print('xx:',temp_data)
+        device_id, temp_f = temp_data
+        report_data('DS18B20 '+device_id,'Soil Temp','{:0.1f}'.format(temp_f))
 
 #
 #  DHT11 Routines
@@ -106,25 +109,56 @@ def dht11_sensor_read():
 def dht11_sensor_report():
     global air_temp_f
     global air_humidity
-    print('Air Temp                   : {0:0.1f} F'.format(air_temp_f))
-    print('Air Humidity               : {0:0.1f} %'.format(air_humidity))
+    report_data('DHT11','Air Temp','{0:0.1f} F'.format(air_temp_f))
+    report_data('DHT11','Air Humidity','{0:0.1f} %'.format(air_humidity))
+
+#
+# Output Routines
+#
+def rpad(text,len):
+    out_text = text + '                                                                                  '
+    out_text = out_text[0:len]
+    return out_text
+
+def report_column_header(col_lengths):
+    out_text = ''
+    col_text = '-----------------------------------------------------------------------------------'
+    for col_size in col_lengths:
+        out_text = out_text + col_text[0:col_size] + ' '
+    return out_text
+
+def report_title():
+    print('Growtastic Sensors Test - Raspberry Pi Platform')
+
+def report_header():
+    print(rpad('Device',30),rpad('Measurement',15),'Reading')
+    print(report_column_header([30,15,10]))
+
+def report_data(device,measurement,reading):
+    print(rpad(device,30),rpad(measurement,15),reading)
+
+def report_break():
+    print ('----------------------------')
+
 
 #
 #  MAIN
 #
+report_title()
 
-print('Growtastic Sensors Test - Raspberry Pi Platform')
+ow_init()                       # Initialize OneWire library
 
-ow_init()                   # Initialize OneWire library
+report_header()
 
 while True:
-    dht11_sensor_read()
-    dht11_sensor_report()
+    dht11_sensor_read()         # Read DHT11 Temp/Humidity sensor
+    dht11_sensor_report()       # Report DHT11 data
 
-    ow_sensors_read_all()
-    ow_sensors_report_all()
+    ow_sensors_read_all()       # Read DS18B20 waterproof temperature sensor(s)
+    ow_sensors_report_all()     # Report DS18B20 temperature data
 
     time.sleep(5)
 
-    print ('----------------------------')
+    report_break()
+
 
