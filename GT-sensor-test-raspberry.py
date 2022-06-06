@@ -24,6 +24,13 @@ import Adafruit_DHT
 import os
 import glob
 import time
+import bme280
+
+#
+# BME280 Sensor Data
+# 
+BME280_DEVICE_ID    = 0x77          # BME280 I2C device ID
+bme280_sensor   = bme280.BME280Sensor(BME280_DEVICE_ID)
 
 #
 # DHT11 Sensor Data
@@ -38,6 +45,7 @@ ow_base_dir = '/sys/bus/w1/devices/'
 ow_device_folders = glob.glob(ow_base_dir + '28*')
 ow_device_count = len(ow_device_folders)
 ow_device_temps = []
+
 
 #
 # OneWire Routines
@@ -95,7 +103,7 @@ def ow_sensors_report_all():
     for temp_data in ow_sensor_temps:
     #    print('xx:',temp_data)
         device_id, temp_f = temp_data
-        report_data('DS18B20 '+device_id,'Soil Temp','{:0.1f}'.format(temp_f))
+        report_data('DS18B20 '+device_id,'Soil Temp','{:0.1f} F'.format(temp_f))
 
 #
 #  DHT11 Routines
@@ -113,6 +121,37 @@ def dht11_sensor_report():
     report_data('DHT11','Air Humidity','{0:0.1f} %'.format(air_humidity))
 
 #
+#  BME28- Temperature/Humidity/Pressure Sensor Routines
+#
+def bme280_sensor_read():
+    global bme280_chip_id
+    global bme280_chip_version
+    global bme280_temp_f
+    global bme280_humidity
+    global bme280_pressure
+
+    (bme280_chip_id,bme280_chip_version) = bme280_sensor.read_id()
+    (bme280_temp_c,bme280_pressure,bme280_humidity) = bme280_sensor.read_all()
+
+    bme280_temp_f = ( bme280_temp_c * 9.0 / 5.0 ) + 32.0        # convert C to F
+    bme280_pressure = bme280_pressure / 33.863886666667         # convert hPa (hectopascals) to in (inches)
+
+def bme280_sensor_report():
+    global bme280_chip_id
+    global bme280_chip_version
+    global bme280_temp_f
+    global bme280_humidity
+    global bme280_pressure
+
+    #report_data('BME280','Chip ID','{0}'.format(bme280_chip_id))
+    #report_data('BMD280','Chip Version','{0}'.format(bme280_chip_version))
+
+    report_data('BME280','Air Temp','{0:0.1f} F'.format(bme280_temp_f))
+    report_data('BME280','Air Humidity','{0:0.1f} %'.format(bme280_humidity))
+    report_data('BME280','Air Pressure','{0:0.1f} in Hg'.format(bme280_pressure))
+
+
+#
 # Output Routines
 #
 def rpad(text,len):
@@ -128,6 +167,7 @@ def report_column_header(col_lengths):
     return out_text
 
 def report_title():
+    print('')
     print('Growtastic Sensors Test - Raspberry Pi Platform')
 
 def report_header():
@@ -138,7 +178,7 @@ def report_data(device,measurement,reading):
     print(rpad(device,30),rpad(measurement,15),reading)
 
 def report_break():
-    print ('----------------------------')
+    print(report_column_header([30,15,10]))
 
 
 #
@@ -156,6 +196,9 @@ while True:
 
     ow_sensors_read_all()       # Read DS18B20 waterproof temperature sensor(s)
     ow_sensors_report_all()     # Report DS18B20 temperature data
+
+    bme280_sensor_read()        # Read BME280 Temp/Humidiy/Pressure sensor
+    bme280_sensor_report()      # Report BME280 data
 
     time.sleep(5)
 

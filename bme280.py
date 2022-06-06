@@ -1,21 +1,15 @@
 #!/usr/bin/python
 #--------------------------------------
-#    ___  ___  _ ____
-#   / _ \/ _ \(_) __/__  __ __
-#  / , _/ ___/ /\ \/ _ \/ // /
-# /_/|_/_/  /_/___/ .__/\_, /
-#                /_/   /___/
+# BME280.py
 #
-#           bme280.py
 #  Read data from a digital pressure sensor.
 #
-#  Official datasheet available from :
-#  https://www.bosch-sensortec.com/bst/products/all_products/bme280
-#
-#
-# https://www.raspberrypi-spy.co.uk/
+#  References:
+#      Datasheet available from :
+#          https://www.bosch-sensortec.com/bst/products/all_products/bme280
 #
 #--------------------------------------
+
 import smbus
 import time
 from ctypes import c_short
@@ -47,14 +41,14 @@ def getUChar(data,index):
 class BME280Sensor:
     def __init__(self,device_id):
         self.i2c_device_id = device_id
-        self.i2c_bus = smbus.SMbus(1)           # Rev 2 Pi, Pi 2 & Pi 3 uses bus 1
+        self.i2c_bus = smbus.SMBus(1)           # Rev 2 Pi, Pi 2 & Pi 3 uses bus 1
                                                 # Rev 1 Pi uses bus 0
-    def read_id():
+    def read_id(self):
         REG_ID     = 0xD0                     # Chip ID Register Address
         (chip_id, chip_version) = self.i2c_bus.read_i2c_block_data(self.i2c_device_id, REG_ID, 2)
         return (chip_id, chip_version)
 
-    def read_all():
+    def read_all(self):
         # Register Addresses
         REG_DATA = 0xF7
         REG_CONTROL = 0xF4
@@ -116,7 +110,7 @@ class BME280Sensor:
         time.sleep(wait_time/1000)  # Wait the required time  
 
         # Read temperature/pressure/humidity
-        data = bus.read_i2c_block_data(addr, REG_DATA, 8)
+        data = self.i2c_bus.read_i2c_block_data(self.i2c_device_id, REG_DATA, 8)
         pres_raw = (data[0] << 12) | (data[1] << 4) | (data[2] >> 4)
         temp_raw = (data[3] << 12) | (data[4] << 4) | (data[5] >> 4)
         hum_raw = (data[6] << 8) | data[7]
@@ -158,15 +152,15 @@ def main():
 
     temp_sensor = BME280Sensor(DEVICE_ID)
 
-  (chip_id, chip_version) = temp_sensor.read_id()
-  print("Chip ID     :", chip_id)
-  print("Version     :", chip_version)
+    (chip_id, chip_version) = temp_sensor.read_id()
+    print("Chip ID     :", chip_id)
+    print("Version     :", chip_version)
 
-  temperature,pressure,humidity = temp_sensor.read_all()
+    temperature,pressure,humidity = temp_sensor.read_all()
 
-  print("Temperature : ", temperature, "C")
-  print("Pressure : ", pressure, "hPa")
-  print("Humidity : ", humidity, "%")
+    print("Temperature : ", temperature, "C")
+    print("Pressure : ", pressure, "hPa")
+    print("Humidity : ", humidity, "%")
 
 if __name__=="__main__":
    main()
