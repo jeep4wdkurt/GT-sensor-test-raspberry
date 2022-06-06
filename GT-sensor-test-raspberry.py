@@ -35,8 +35,8 @@ import Adafruit_ADS1x15             # Adafruit ADS1115 4-Channel ADC library
 #
 ADS1115_DEVICE_ID   = 0x48                                      # ADS1115 I2C device ID (default)
 ADS1115_GAIN        = 1                                         # ADS1115 voltage gain (1=4.096 volts)
-ads1115_adc         = Adafruit_ADS1x15.ADS1115()                # Create an ADS1115 ADC (16-bit) sensor instance.
-ads1115_values      = []                                        # ADS1115 readings
+ads1115_sensor      = Adafruit_ADS1x15.ADS1115()                # Create an ADS1115 ADC (16-bit) sensor instance.
+ads1115_values      = [0]*4                                     # ADS1115 readings
 
 #
 # BME280 Sensor Data
@@ -168,15 +168,15 @@ def bme280_sensor_report():
 def ads1115_sensor_read():
     global ads1115_sensor
     global ads1115_values
-    ads1115_valus = [0]*4
+    ads1115_values = [0]*4
     for ads1115_channel in range(4):
         ads1115_values[ads1115_channel] = ads1115_sensor.read_adc(ads1115_channel,ADS1115_GAIN)
     return ads1115_values
 
 def ads1115_sensor_report():
     global ads1115_values
-    for adc1115_channel in range(4):
-        report_data('ADS1115','ADC Channel {0}'.format(adc1111_channel),ads1115_values[ads1115_channel])
+    for ads1115_channel in range(4):
+        report_data('ADS1115','ADC Channel {0}'.format(ads1115_channel),ads1115_values[ads1115_channel])
 
 #
 # Output Routines
