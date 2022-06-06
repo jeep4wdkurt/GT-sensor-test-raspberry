@@ -5,9 +5,11 @@
 #	Growtacular Sensors Test for RaspberryPi platform
 #
 #	Tests the following sensors:
-#    	o DS18B20 temperature sensor(s), one or more connected in parallel
-#    	o DHT11 temperature and pressure sensor
-#    	o xxx Capacitive soil moisture sensor
+#    	o DS18B20 waterproof temperature sensor(s), one or more connected in parallel, connected to GPIO
+#    	o DHT11 temperature and pressure sensor, connected to GPIO
+#       o BME280 temperature/humidity/pressure sensor, connected to I2C bus
+#       o ADS1115 4-channel ADC, connected to I2C bus
+#       o Capacitive Soil Sensor 1.2, connected via ADS11115 ADC
 #
 # Compatibility:
 #   RaspberryPi-3B/1GB
@@ -20,17 +22,27 @@
 #
 
 import sys
-import Adafruit_DHT
 import os
 import glob
 import time
-import bme280
+
+import bme280                       # Growtastic BME280 Temperature/Humidity/Pressure sensor library
+import Adafruit_DHT                 # Adafruit DHT11 Temperature/Humidity sensor library
+import Adafruit_ADS1x15             # Adafruit ADS1115 4-Channel ADC library
+
+#
+# ADS1115 Sensor Data
+#
+ADS1115_DEVICE_ID   = 0x48                                      # ADS1115 I2C device ID (default)
+ADS1115_GAIN        = 1                                         # ADS1115 voltage gain (1=4.096 volts)
+ads1115_adc         = Adafruit_ADS1x15.ADS1115()                # Create an ADS1115 ADC (16-bit) sensor instance.
+ads1115_values      = []                                        # ADS1115 readings
 
 #
 # BME280 Sensor Data
 # 
-BME280_DEVICE_ID    = 0x77          # BME280 I2C device ID
-bme280_sensor   = bme280.BME280Sensor(BME280_DEVICE_ID)
+BME280_DEVICE_ID    = 0x77                                      # BME280 I2C device ID (wired. unwired default=0x76)
+bme280_sensor       = bme280.BME280Sensor(BME280_DEVICE_ID)     # Create an BME280 sensor instance
 
 #
 # DHT11 Sensor Data
@@ -121,7 +133,7 @@ def dht11_sensor_report():
     report_data('DHT11','Air Humidity','{0:0.1f} %'.format(air_humidity))
 
 #
-#  BME28- Temperature/Humidity/Pressure Sensor Routines
+#  BME280 Temperature/Humidity/Pressure Sensor Routines
 #
 def bme280_sensor_read():
     global bme280_chip_id
@@ -150,18 +162,33 @@ def bme280_sensor_report():
     report_data('BME280','Air Humidity','{0:0.1f} %'.format(bme280_humidity))
     report_data('BME280','Air Pressure','{0:0.1f} in Hg'.format(bme280_pressure))
 
+#
+# ADS1115 4-Channmel ADC (Analog to Digital Converter) Routines
+#
+def ads1115_sensor_read():
+    global ads1115_sensor
+    global ads1115_values
+    ads1115_valus = [0]*4
+    for ads1115_channel in range(4):
+        ads1115_values[ads1115_channel] = ads1115_sensor.read_adc(ads1115_channel,ADS1115_GAIN)
+    return ads1115_values
+
+def ads1115_sensor_report():
+    global ads1115_values
+    for adc1115_channel in range(4):
+        report_data('ADS1115','ADC Channel {0}'.format(adc1111_channel),ads1115_values[ads1115_channel])
 
 #
 # Output Routines
 #
 def rpad(text,len):
-    out_text = text + '                                                                                  '
+    out_text = text + ' '*80
     out_text = out_text[0:len]
     return out_text
 
 def report_column_header(col_lengths):
     out_text = ''
-    col_text = '-----------------------------------------------------------------------------------'
+    col_text = '-'*80
     for col_size in col_lengths:
         out_text = out_text + col_text[0:col_size] + ' '
     return out_text
@@ -199,6 +226,9 @@ while True:
 
     bme280_sensor_read()        # Read BME280 Temp/Humidiy/Pressure sensor
     bme280_sensor_report()      # Report BME280 data
+
+    ads1115_sensor_read()       # Read ADS1115 Sensor
+    ads1115_sensor_report()     # Report ADS1115 data
 
     time.sleep(5)
 
